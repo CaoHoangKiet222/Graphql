@@ -82,14 +82,21 @@ module.exports = {
       updatedAt: newPost.updatedAt.toISOString(),
     };
   },
-  getPosts: async (args, req) => {
+  getPosts: async ({ page }, req) => {
     if (!req.isAuth) {
       const error = new Error("Authorization failed!!");
       error.code = 401;
       throw error;
     }
+
+    const currentPage = page || 1;
+    const perPage = 3;
     const totalPosts = await Post.find().countDocuments();
-    const posts = await Post.find().populate("creator").sort({ createdAt: -1 }); // sorted by descending order
+    const posts = await Post.find()
+      .populate("creator")
+      .sort({ createdAt: -1 }) // sorted by descending order
+      .skip((currentPage - 1) * perPage) // pagination
+      .limit(perPage);
 
     return {
       posts: posts.map((p) => {

@@ -1,46 +1,21 @@
 const path = require("path");
 const express = require("express");
-const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
-const multer = require("multer");
 const { graphqlHTTP } = require("express-graphql");
 const graphqlSchema = require("./graphql/schema");
 const graphqlResolvers = require("./graphql/resolvers");
 const auth = require("./middleware/auth");
+const multer = require("multer");
 const cors = require("cors");
+const PORT = process.env.PORT || 8080;
+const { fileStorage, fileFilter, clearImage } = require("./helpers/multer");
 
 const app = express();
 
-const fileStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "images");
-  },
-  filename: (req, file, cb) => {
-    cb(null, new Date().toISOString() + "-" + file.originalname);
-  },
-});
-
-const fileFilter = (req, file, cb) => {
-  if (
-    file.mimetype === "image/png" ||
-    file.mimetype === "image/jpg" ||
-    file.mimetype === "image/jpeg"
-  ) {
-    cb(null, true);
-  } else {
-    cb(null, false);
-  }
-};
-
-app.use(bodyParser.urlencoded()); // x-www-form-urlencoded <form>
-app.use(bodyParser.json()); // application/json
+app.use(express.json({ limit: "50mb" })); // Allow us to handle raw json
+app.use(express.urlencoded({ limit: "50mb", extended: false })); // Allow us to handle form submissions to handle URL encoded data
 
 app.use(cors());
-
-app.use(
-  multer({ storage: fileStorage, fileFilter: fileFilter }).single("image")
-);
-app.use("/images", express.static(path.join(__dirname, "images")));
 
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -53,6 +28,39 @@ app.use((req, res, next) => {
 });
 
 app.use(auth);
+
+app.use("/images", express.static(path.join(__dirname, "images")));
+
+app.put(
+  "/post-image",
+  multer({ storage: fileStorage, fileFilter: fileFilter }).single("image"),
+  (req, res, next) => {
+    try {
+      if (!req.isAuth) {
+        const error = new Error("Authorization failed!!");
+        error.statusCode = 401;
+        throw error;
+      }
+
+      if (!req.file) {
+        const error = new Error("No image provided!!");
+        error.statusCode = 422;
+        throw error;
+      }
+
+      if (req.body.oldPath) {
+        clearImage(req.body.oldPath);
+      }
+
+      return res
+        .status(200)
+        .json({ message: "File stored!!", filePath: req.file.path });
+    } catch (error) {
+      console.log(error);
+      return next(error);
+    }
+  }
+);
 
 app.use(
   "/graphql",
@@ -87,6 +95,7 @@ mongoose
     }
   )
   .then(() => {
-    app.listen(8080);
+    app.listen(PORT);
+    console.log(`Server is running on port ${PORT}`);
   })
   .catch((err) => console.log(err));

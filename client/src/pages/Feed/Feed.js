@@ -57,7 +57,7 @@ class Feed extends Component {
     const graphqlQuery = {
       query: `
         query {
-          getPosts {
+          getPosts(page: ${page}) {
             posts {
                 _id
                 title
@@ -149,67 +149,99 @@ class Feed extends Component {
     this.setState({
       editLoading: true
     });
+    const formData = new FormData();
+    formData.append("image", postData.image);
+    console.log(this.state.editPost);
 
-    const graphqlQuery = {
-      query: `
-        mutation($input: PostInputData!) {
-          createPost(postInput: $input) {
-            _id
-            title
-            imageUrl
-            content
-            creator {
-              name
-            }
-            createdAt
-          }
-        }
-      `,
-      variables: {
-        input: {
-          title: postData.title,
-          content: postData.content,
-          imageUrl: "some url"
-        }
-      }
-    };
+    if (this.state.editPost) {
+      formData.append("oldPath", this.state.editPost.imagePath);
+    }
 
-    fetch("http://localhost:8080/graphql", {
-      method: "POST",
-      body: JSON.stringify(graphqlQuery),
+    fetch("http://localhost:8080/post-image", {
+      method: "PUT",
       headers: {
-        Authorization: "Bearer " + this.props.token,
-        "Content-Type": "application/json"
-      }
+        Authorization: "Bearer " + this.props.token
+      },
+      body: formData
     })
       .then(res => {
         return res.json();
       })
-      .then(resData => {
-        console.log(resData);
-        const post = {
-          _id: resData.data.createPost._id,
-          title: resData.data.createPost.title,
-          content: resData.data.createPost.content,
-          creator: resData.data.createPost.creator,
-          createdAt: resData.data.createPost.createdAt
-        };
-        this.setState(prevState => {
-          return {
+      .then(data => {
+        console.log(data);
+        if (!data.filePath) {
+          return this.setState({
             isEditing: false,
             editPost: null,
-            editLoading: false
-          };
-        });
-      })
-      .catch(err => {
-        console.log(err);
-        this.setState({
-          isEditing: false,
-          editPost: null,
-          editLoading: false,
-          error: err
-        });
+            editLoading: false,
+            error: data
+          });
+        }
+
+        const graphqlQuery = {
+          query: `
+            mutation($input: PostInputData!) {
+              createPost(postInput: $input) {
+                _id
+                title
+                imageUrl
+                content
+                creator {
+                  name
+                }
+                createdAt
+              }
+            }
+          `,
+          variables: {
+            input: {
+              title: postData.title,
+              content: postData.content,
+              imageUrl: data.filePath // need to be changed
+            }
+          }
+        };
+
+        fetch("http://localhost:8080/graphql", {
+          method: "POST",
+          body: JSON.stringify(graphqlQuery),
+          headers: {
+            Authorization: "Bearer " + this.props.token,
+            "Content-Type": "application/json"
+          }
+        })
+          .then(res => {
+            return res.json();
+          })
+          .then(resData => {
+            const post = {
+              _id: resData.data.createPost._id,
+              title: resData.data.createPost.title,
+              content: resData.data.createPost.content,
+              creator: resData.data.createPost.creator,
+              createdAt: resData.data.createPost.createdAt,
+              imagePath: resData.data.createPost.imageUrl
+            };
+            this.setState(prevState => {
+              prevState.posts.length === 3 && prevState.posts.pop();
+              return {
+                posts: [post, ...prevState.posts],
+                postPage: 1,
+                isEditing: false,
+                editPost: null,
+                editLoading: false
+              };
+            });
+          })
+          .catch(err => {
+            console.log(err);
+            this.setState({
+              isEditing: false,
+              editPost: null,
+              editLoading: false,
+              error: err
+            });
+          });
       });
   };
 

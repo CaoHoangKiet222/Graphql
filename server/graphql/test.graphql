@@ -1,0 +1,49 @@
+# Postman
+# QUERY
+mutation ($email: String!, $name: String!, $password: String!) {
+  createUser(userInput: { email: $email, name: $name, password: $password }) {
+    _id
+    email
+  }
+}
+
+# GRAPHQL VARIABLES
+{
+    "email": "caohoangkiet@gmail.com",
+    "name": "kiet",
+    "password": "111111"
+}
+
+# QUERY
+mutation ($userInput: UserInputData!) {
+  createUser(userInput: $userInput) {
+    _id
+    email
+  }
+}
+
+# GRAPHQL VARIABLES
+{
+  "userInput": {
+    "email": "caohoangkiet@gmail.com",
+    "name": "kiet",
+    "password": "111111"
+  }
+}
+
+# QUERY
+mutation ($input: PostInputData!) {
+  createPost(postInput: $input) {
+    title
+    imageUrl
+  }
+}
+
+# GRAPHQL VARIABLES
+{
+  "input": {
+    "title": "hello world",
+    "content": "xxxxxxxxx",
+    "imageUrl": "uuuuuuuu"
+  }
+}

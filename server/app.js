@@ -49,6 +49,7 @@ app.put(
       }
 
       if (req.body.oldPath) {
+        console.log("clear");
         clearImage(req.body.oldPath);
       }
 

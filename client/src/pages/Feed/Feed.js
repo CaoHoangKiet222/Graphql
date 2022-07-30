@@ -151,9 +151,11 @@ class Feed extends Component {
     });
     const formData = new FormData();
     formData.append("image", postData.image);
-    console.log(this.state.editPost);
+    console.log(this.state);
+    let isEdit = false;
 
     if (this.state.editPost) {
+      isEdit = true;
       formData.append("oldPath", this.state.editPost.imagePath);
     }
 
@@ -169,6 +171,7 @@ class Feed extends Component {
       })
       .then(data => {
         console.log(data);
+        console.log(isEdit);
         if (!data.filePath) {
           return this.setState({
             isEditing: false,
@@ -181,7 +184,7 @@ class Feed extends Component {
         const graphqlQuery = {
           query: `
             mutation($input: PostInputData!) {
-              createPost(postInput: $input) {
+              ${!isEdit ? "createPost" : "updatePost"}(postInput: $input)  {
                 _id
                 title
                 imageUrl
@@ -195,9 +198,10 @@ class Feed extends Component {
           `,
           variables: {
             input: {
+              _id: !isEdit ? "" : this.state.editPost._id,
               title: postData.title,
               content: postData.content,
-              imageUrl: data.filePath // need to be changed
+              imageUrl: data.filePath
             }
           }
         };
@@ -214,18 +218,40 @@ class Feed extends Component {
             return res.json();
           })
           .then(resData => {
-            const post = {
-              _id: resData.data.createPost._id,
-              title: resData.data.createPost.title,
-              content: resData.data.createPost.content,
-              creator: resData.data.createPost.creator,
-              createdAt: resData.data.createPost.createdAt,
-              imagePath: resData.data.createPost.imageUrl
-            };
+            console.log(resData);
+            const post = !isEdit
+              ? {
+                  _id: resData.data.createPost._id,
+                  title: resData.data.createPost.title,
+                  content: resData.data.createPost.content,
+                  creator: resData.data.createPost.creator,
+                  createdAt: resData.data.createPost.createdAt,
+                  imagePath: resData.data.createPost.imageUrl
+                }
+              : {
+                  _id: resData.data.updatePost._id,
+                  title: resData.data.updatePost.title,
+                  content: resData.data.updatePost.content,
+                  creator: resData.data.updatePost.creator,
+                  createdAt: resData.data.updatePost.createdAt,
+                  imagePath: resData.data.updatePost.imageUrl
+                };
             this.setState(prevState => {
-              prevState.posts.length === 3 && prevState.posts.pop();
+              if (!isEdit) {
+                prevState.posts.length === 3 && prevState.posts.pop();
+              } else {
+                prevState.posts.splice(
+                  prevState.posts.findIndex(p => {
+                    return p._id === post._id;
+                  }),
+                  1,
+                  post
+                );
+              }
               return {
-                posts: [post, ...prevState.posts],
+                posts: !isEdit
+                  ? [post, ...prevState.posts]
+                  : [...prevState.posts],
                 postPage: 1,
                 isEditing: false,
                 editPost: null,

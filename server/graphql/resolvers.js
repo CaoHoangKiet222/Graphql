@@ -50,7 +50,6 @@ module.exports = {
     return { token, userId: user._id.toString() };
   },
   createPost: async ({ postInput }, req) => {
-    console.log(postInput, req.isAuth);
     if (!req.isAuth) {
       const error = new Error("Authorization failed!!");
       error.code = 401;
@@ -108,6 +107,49 @@ module.exports = {
         };
       }),
       totalPosts,
+    };
+  },
+  updatePost: async ({ postInput }, req) => {
+    console.log("updatePost", postInput);
+    if (!req.isAuth) {
+      const error = new Error("Authorization failed!!");
+      error.code = 401;
+      throw error;
+    }
+
+    const updatePost = await Post.findByIdAndUpdate(
+      postInput._id,
+      {
+        title: postInput.title,
+        content: postInput.content,
+        imageUrl: postInput.imageUrl,
+      },
+      { new: true }
+    ).populate("creator");
+    console.log("updatePost", updatePost);
+
+    return {
+      ...updatePost._doc,
+      _id: updatePost._id.toString(),
+      createdAt: updatePost.createdAt.toISOString(),
+      updatedAt: updatePost.updatedAt.toISOString(),
+    };
+  },
+  getPost: async ({ postId }, req) => {
+    console.log(postId);
+    if (!req.isAuth) {
+      const error = new Error("Authorization failed!!");
+      error.code = 401;
+      throw error;
+    }
+
+    const post = await Post.findById(postId).populate("creator");
+
+    return {
+      ...post._doc,
+      _id: post._id.toString(),
+      createdAt: post.createdAt.toISOString(),
+      updatedAt: post.updatedAt.toISOString(),
     };
   },
 };

@@ -2,6 +2,7 @@ const User = require("../models/user");
 const Post = require("../models/post");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const { clearImage } = require("../helpers/multer");
 
 module.exports = {
   createUser: async (args, _req) => {
@@ -110,23 +111,24 @@ module.exports = {
     };
   },
   updatePost: async ({ postInput }, req) => {
-    console.log("updatePost", postInput);
     if (!req.isAuth) {
       const error = new Error("Authorization failed!!");
       error.code = 401;
       throw error;
     }
 
-    const updatePost = await Post.findByIdAndUpdate(
-      postInput._id,
-      {
-        title: postInput.title,
-        content: postInput.content,
-        imageUrl: postInput.imageUrl,
-      },
-      { new: true }
-    ).populate("creator");
-    console.log("updatePost", updatePost);
+    const post = await Post.findById(postInput._id).populate("creator");
+
+    if (req.userId.toString() !== post.creator._id.toString()) {
+      const error = new Error("Not Authorized!!");
+      error.code = 403;
+      throw error;
+    }
+
+    post.title = postInput.title;
+    post.content = postInput.content;
+    post.imageUrl = postInput.imageUrl;
+    const updatePost = await post.save();
 
     return {
       ...updatePost._doc,
@@ -136,7 +138,6 @@ module.exports = {
     };
   },
   getPost: async ({ postId }, req) => {
-    console.log(postId);
     if (!req.isAuth) {
       const error = new Error("Authorization failed!!");
       error.code = 401;
@@ -151,5 +152,63 @@ module.exports = {
       createdAt: post.createdAt.toISOString(),
       updatedAt: post.updatedAt.toISOString(),
     };
+  },
+  deletePost: async ({ postId }, req) => {
+    if (!req.isAuth) {
+      const error = new Error("Authorization failed!!");
+      error.code = 401;
+      throw error;
+    }
+
+    const post = await Post.findById(postId).populate("creator");
+
+    if (req.userId.toString() !== post.creator._id.toString()) {
+      const error = new Error("Not Authorized!!");
+      error.code = 403;
+      throw error;
+    }
+
+    clearImage(post.imageUrl);
+    await Post.deleteOne({ _id: postId });
+
+    const user = await User.findById(req.userId);
+    user.posts.pull(postId);
+    await user.save();
+    return true;
+  },
+  getUser: async (args, req) => {
+    if (!req.isAuth) {
+      const error = new Error("Authorization failed!!");
+      error.code = 401;
+      throw error;
+    }
+
+    const user = await User.findById(req.userId);
+
+    if (!user) {
+      const error = new Error("No user found!!");
+      error.code = 404;
+      throw error;
+    }
+
+    return { ...user._doc, _id: user._id.toString() };
+  },
+  updateStatus: async ({ newStatus }, req) => {
+    if (!req.isAuth) {
+      const error = new Error("Authorization failed!!");
+      error.code = 401;
+      throw error;
+    }
+
+    let user = await User.findById(req.userId);
+
+    if (!user) {
+      const error = new Error("User not found.");
+      error.statusCode = 404;
+      throw error;
+    }
+    user.status = newStatus;
+    user = await user.save();
+    return { ...user._doc, _id: user._id.toString() };
   },
 };

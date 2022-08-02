@@ -31,6 +31,9 @@ app.use(auth);
 
 app.use("/images", express.static(path.join(__dirname, "images")));
 
+// app.use(require("./routes/auth"));
+// app.use(require("./routes/feed"));
+
 app.put(
   "/post-image",
   multer({ storage: fileStorage, fileFilter: fileFilter }).single("image"),
@@ -49,7 +52,6 @@ app.put(
       }
 
       if (req.body.oldPath) {
-        console.log("clear");
         clearImage(req.body.oldPath);
       }
 
@@ -57,7 +59,6 @@ app.put(
         .status(200)
         .json({ message: "File stored!!", filePath: req.file.path });
     } catch (error) {
-      console.log(error);
       return next(error);
     }
   }

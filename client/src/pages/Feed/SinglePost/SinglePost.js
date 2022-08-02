@@ -14,7 +14,6 @@ class SinglePost extends Component {
 
   componentDidMount() {
     const postId = this.props.match.params.postId;
-    console.log(postId);
     const graphqlQuery = {
       query: `
         query {
@@ -46,7 +45,6 @@ class SinglePost extends Component {
         return res.json();
       })
       .then(resData => {
-        console.log(resData);
         this.setState({
           title: resData.data.getPost.title,
           author: resData.data.getPost.creator.name,

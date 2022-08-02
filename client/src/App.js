@@ -59,7 +59,6 @@ class App extends Component {
   loginHandler = (event, authData) => {
     event.preventDefault();
     this.setState({ authLoading: true });
-    console.log(authData);
 
     const graphqlQuery = {
       query: `
@@ -87,7 +86,6 @@ class App extends Component {
         return res.json();
       })
       .then(({ data, errors }) => {
-        console.log(data);
         if (errors) {
           throw new Error(errors[0].message);
         }
@@ -120,7 +118,6 @@ class App extends Component {
   signupHandler = (event, authData) => {
     event.preventDefault();
     this.setState({ authLoading: true });
-    console.log(authData);
 
     const graphqlQuery = {
       query: `

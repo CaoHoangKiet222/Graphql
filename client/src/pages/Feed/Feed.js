@@ -22,20 +22,30 @@ class Feed extends Component {
   };
 
   componentDidMount() {
-    console.log(this.props);
-    // fetch("http://localhost:8080/graphql", {
-    //   headers: {
-    //     Authorization: "Bearer " + this.props.token
-    //   }
-    // })
-    //   .then(res => {
-    //     return res.json();
-    //   })
-    //   .then(resData => {
-    //     console.log(resData);
-    //     this.setState({ status: resData.status });
-    //   })
-    //   .catch(this.catchError);
+    const graphqlQuery = {
+      query: `
+        query {
+          getUser {
+            status
+          }
+        }
+      `
+    };
+    fetch("http://localhost:8080/graphql", {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer " + this.props.token,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(graphqlQuery)
+    })
+      .then(res => {
+        return res.json();
+      })
+      .then(resData => {
+        this.setState({ status: resData.data.getUser.status });
+      })
+      .catch(this.catchError);
 
     this.loadPosts();
   }
@@ -86,7 +96,6 @@ class Feed extends Component {
         return res.json();
       })
       .then(resData => {
-        console.log(resData);
         this.setState({
           posts: resData.data.getPosts.posts.map(post => {
             return {
@@ -103,24 +112,31 @@ class Feed extends Component {
 
   statusUpdateHandler = event => {
     event.preventDefault();
-    fetch("http://localhost:8080/auth/status", {
-      method: "PATCH",
+    const graphqlQuery = {
+      query: `
+        mutation {
+          updateStatus(newStatus: "${this.state.status}") {
+            status
+          }
+        }
+      `
+    };
+    fetch("http://localhost:8080/graphql", {
+      method: "POST",
       headers: {
         Authorization: "Bearer " + this.props.token,
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({
-        status: this.state.status
-      })
+      body: JSON.stringify(graphqlQuery)
     })
       .then(res => {
-        if (res.status !== 200 && res.status !== 201) {
-          throw new Error("Can't update status!");
-        }
         return res.json();
       })
       .then(resData => {
-        console.log(resData);
+        if (resData.errors) {
+          throw new Error("Update status failed!!");
+        }
+        this.setState({ status: resData.data.updateStatus.status });
       })
       .catch(this.catchError);
   };
@@ -145,13 +161,11 @@ class Feed extends Component {
   };
 
   finishEditHandler = postData => {
-    console.log(postData);
     this.setState({
       editLoading: true
     });
     const formData = new FormData();
     formData.append("image", postData.image);
-    console.log(this.state);
     let isEdit = false;
 
     if (this.state.editPost) {
@@ -170,8 +184,6 @@ class Feed extends Component {
         return res.json();
       })
       .then(data => {
-        console.log(data);
-        console.log(isEdit);
         if (!data.filePath) {
           return this.setState({
             isEditing: false,
@@ -218,24 +230,18 @@ class Feed extends Component {
             return res.json();
           })
           .then(resData => {
-            console.log(resData);
-            const post = !isEdit
-              ? {
-                  _id: resData.data.createPost._id,
-                  title: resData.data.createPost.title,
-                  content: resData.data.createPost.content,
-                  creator: resData.data.createPost.creator,
-                  createdAt: resData.data.createPost.createdAt,
-                  imagePath: resData.data.createPost.imageUrl
-                }
-              : {
-                  _id: resData.data.updatePost._id,
-                  title: resData.data.updatePost.title,
-                  content: resData.data.updatePost.content,
-                  creator: resData.data.updatePost.creator,
-                  createdAt: resData.data.updatePost.createdAt,
-                  imagePath: resData.data.updatePost.imageUrl
-                };
+            const post = {
+              _id: resData.data[!isEdit ? "createPost" : "updatePost"]._id,
+              title: resData.data[!isEdit ? "createPost" : "updatePost"].title,
+              content:
+                resData.data[!isEdit ? "createPost" : "updatePost"].content,
+              creator:
+                resData.data[!isEdit ? "createPost" : "updatePost"].creator,
+              createdAt:
+                resData.data[!isEdit ? "createPost" : "updatePost"].createdAt,
+              imagePath:
+                resData.data[!isEdit ? "createPost" : "updatePost"].imageUrl
+            };
             this.setState(prevState => {
               if (!isEdit) {
                 prevState.posts.length === 3 && prevState.posts.pop();
@@ -277,29 +283,39 @@ class Feed extends Component {
 
   deletePostHandler = postId => {
     this.setState({ postsLoading: true });
-    fetch("http://localhost:8080/feed/post/" + postId, {
-      method: "DELETE",
+    const graphqlQuery = {
+      query: `
+        mutation {
+          deletePost(postId: "${postId}")
+        }
+      `
+    };
+    fetch("http://localhost:8080/graphql", {
+      method: "POST",
       headers: {
-        Authorization: "Bearer " + this.props.token
-      }
+        Authorization: "Bearer " + this.props.token,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(graphqlQuery)
     })
       .then(res => {
-        if (res.status !== 200 && res.status !== 201) {
-          throw new Error("Deleting a post failed!");
-        }
         return res.json();
       })
       .then(resData => {
-        console.log(resData);
+        if (resData.errors) {
+          throw new Error("Deleting post failed!!");
+        }
         this.loadPosts();
-        // this.setState(prevState => {
-        //   const updatedPosts = prevState.posts.filter(p => p._id !== postId);
-        //   return { posts: updatedPosts, postsLoading: false };
-        // });
       })
       .catch(err => {
         console.log(err);
-        this.setState({ postsLoading: false });
+        this.setState({
+          isEditing: false,
+          editPost: null,
+          editLoading: false,
+          postsLoading: false,
+          error: err
+        });
       });
   };
 

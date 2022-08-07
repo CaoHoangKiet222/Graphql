@@ -37,6 +37,7 @@ class Feed extends Component {
         Authorization: "Bearer " + this.props.token,
         "Content-Type": "application/json",
       },
+      credentials: "include",
       body: JSON.stringify(graphqlQuery),
     })
       .then((res) => {
@@ -90,6 +91,7 @@ class Feed extends Component {
         Authorization: "Bearer " + this.props.token,
         "Content-Type": "application/json",
       },
+      credentials: "include",
       body: JSON.stringify(graphqlQuery),
     })
       .then((res) => {
@@ -127,6 +129,7 @@ class Feed extends Component {
         Authorization: "Bearer " + this.props.token,
         "Content-Type": "application/json",
       },
+      credentials: "include",
       body: JSON.stringify(graphqlQuery),
     })
       .then((res) => {
@@ -178,6 +181,7 @@ class Feed extends Component {
       headers: {
         Authorization: "Bearer " + this.props.token,
       },
+      credentials: "include",
       body: formData,
     })
       .then((res) => {
@@ -221,6 +225,7 @@ class Feed extends Component {
         fetch(`${process.env.REACT_APP_ENDPOINT_SERVER}/graphql`, {
           method: "POST",
           body: JSON.stringify(graphqlQuery),
+          credentials: "include",
           headers: {
             Authorization: "Bearer " + this.props.token,
             "Content-Type": "application/json",
@@ -296,6 +301,7 @@ class Feed extends Component {
         Authorization: "Bearer " + this.props.token,
         "Content-Type": "application/json",
       },
+      credentials: "include",
       body: JSON.stringify(graphqlQuery),
     })
       .then((res) => {

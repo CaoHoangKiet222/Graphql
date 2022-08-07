@@ -36,6 +36,7 @@ class SinglePost extends Component {
         Authorization: "Bearer " + this.props.token,
         "Content-Type": "application/json",
       },
+      credentials: "include",
       body: JSON.stringify(graphqlQuery),
     })
       .then((res) => {

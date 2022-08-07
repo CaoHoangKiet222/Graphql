@@ -80,6 +80,7 @@ class App extends Component {
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include",
       body: JSON.stringify(graphqlQuery),
     })
       .then((res) => {
@@ -141,6 +142,7 @@ class App extends Component {
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include",
       body: JSON.stringify(graphqlQuery),
     })
       .then((res) => {

@@ -9,7 +9,7 @@ class SinglePost extends Component {
     author: "",
     date: "",
     image: "",
-    content: ""
+    content: "",
   };
 
   componentDidMount() {
@@ -28,23 +28,23 @@ class SinglePost extends Component {
             updatedAt
           }
         }
-      `
+      `,
     };
-    fetch("http://localhost:8080/graphql", {
+    fetch(`${process.env.REACT_APP_ENDPOINT_SERVER}/graphql`, {
       method: "POST",
       headers: {
         Authorization: "Bearer " + this.props.token,
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify(graphqlQuery)
+      body: JSON.stringify(graphqlQuery),
     })
-      .then(res => {
+      .then((res) => {
         if (res.status !== 200) {
           throw new Error("Failed to fetch status");
         }
         return res.json();
       })
-      .then(resData => {
+      .then((resData) => {
         this.setState({
           title: resData.data.getPost.title,
           author: resData.data.getPost.creator.name,
@@ -52,10 +52,10 @@ class SinglePost extends Component {
           date: new Date(resData.data.getPost.createdAt).toLocaleDateString(
             "en-US"
           ),
-          content: resData.data.getPost.content
+          content: resData.data.getPost.content,
         });
       })
-      .catch(err => {
+      .catch((err) => {
         console.log(err);
       });
   }

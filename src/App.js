@@ -21,7 +21,7 @@ class App extends Component {
     token: null,
     userId: null,
     authLoading: false,
-    error: null
+    error: null,
   };
 
   componentDidMount() {
@@ -41,7 +41,7 @@ class App extends Component {
     this.setAutoLogout(remainingMilliseconds);
   }
 
-  mobileNavHandler = isOpen => {
+  mobileNavHandler = (isOpen) => {
     this.setState({ showMobileNav: isOpen, showBackdrop: isOpen });
   };
 
@@ -71,18 +71,18 @@ class App extends Component {
       `,
       variables: {
         email: authData.email,
-        password: authData.password
-      }
+        password: authData.password,
+      },
     };
 
-    fetch("http://localhost:8080/graphql", {
+    fetch(`${process.env.REACT_APP_ENDPOINT_SERVER}/graphql`, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify(graphqlQuery)
+      body: JSON.stringify(graphqlQuery),
     })
-      .then(res => {
+      .then((res) => {
         return res.json();
       })
       .then(({ data, errors }) => {
@@ -94,7 +94,7 @@ class App extends Component {
           isAuth: true,
           token: data.login.token,
           authLoading: false,
-          userId: data.login.userId
+          userId: data.login.userId,
         });
         localStorage.setItem("token", data.login.token);
         localStorage.setItem("userId", data.login.userId);
@@ -105,12 +105,12 @@ class App extends Component {
         localStorage.setItem("expiryDate", expiryDate.toISOString());
         this.setAutoLogout(remainingMilliseconds);
       })
-      .catch(err => {
+      .catch((err) => {
         console.log(err);
         this.setState({
           isAuth: false,
           authLoading: false,
-          error: err
+          error: err,
         });
       });
   };
@@ -132,21 +132,21 @@ class App extends Component {
         input: {
           email: authData.signupForm.email.value,
           password: authData.signupForm.password.value,
-          name: authData.signupForm.name.value
-        }
-      }
+          name: authData.signupForm.name.value,
+        },
+      },
     };
-    fetch("http://localhost:8080/graphql", {
+    fetch(`${process.env.REACT_APP_ENDPOINT_SERVER}/graphql`, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify(graphqlQuery)
+      body: JSON.stringify(graphqlQuery),
     })
-      .then(res => {
+      .then((res) => {
         return res.json();
       })
-      .then(resData => {
+      .then((resData) => {
         if (resData.errors && resData.errors[0].status === 422) {
           throw new Error(
             "Validation failed. Make sure the email address isn't used yet!"
@@ -158,16 +158,16 @@ class App extends Component {
         this.setState({ isAuth: false, authLoading: false });
         this.props.history.replace("/");
       })
-      .catch(err => {
+      .catch((err) => {
         this.setState({
           isAuth: false,
           authLoading: false,
-          error: err
+          error: err,
         });
       });
   };
 
-  setAutoLogout = milliseconds => {
+  setAutoLogout = (milliseconds) => {
     setTimeout(() => {
       this.logoutHandler();
     }, milliseconds);
@@ -183,7 +183,7 @@ class App extends Component {
         <Route
           path="/"
           exact
-          render={props => (
+          render={(props) => (
             <LoginPage
               {...props}
               onLogin={this.loginHandler}
@@ -194,7 +194,7 @@ class App extends Component {
         <Route
           path="/signup"
           exact
-          render={props => (
+          render={(props) => (
             <SignupPage
               {...props}
               onSignup={this.signupHandler}
@@ -211,13 +211,13 @@ class App extends Component {
           <Route
             path="/"
             exact
-            render={props => (
+            render={(props) => (
               <FeedPage userId={this.state.userId} token={this.state.token} />
             )}
           />
           <Route
             path="/:postId"
-            render={props => (
+            render={(props) => (
               <SinglePostPage
                 {...props}
                 userId={this.state.userId}
